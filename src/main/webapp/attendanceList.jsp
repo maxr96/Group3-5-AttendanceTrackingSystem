@@ -5,13 +5,15 @@
 <%@ page import="com.google.appengine.api.users.UserServiceFactory" %>
 
 <%-- //[START imports]--%>
-<%@ page import="com.example.guestbook.GroupInfo" %>
-<%@ page import="com.example.guestbook.Group" %>
+<%@ page import="com.attendancesystem.Exercise" %>
+<%@ page import="com.attendancesystem.Student" %>
+<%@ page import="com.attendancesystem.Group" %>
 <%@ page import="com.googlecode.objectify.Key" %>
 <%@ page import="com.googlecode.objectify.ObjectifyService" %>
 <%-- //[END imports]--%>
 
 <%@ page import="java.util.List" %>
+<%@ page import="com.googlecode.objectify.cmd.LoadType" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <html>
@@ -47,52 +49,34 @@
 
 <%-- //[START datastore]--%>
 <%
-    // Create the correct Ancestor key
-      Key<Group> theGroup = Key.create(Group.class, groupName);
-
-    // Run an ancestor query to ensure we see the most up-to-date
-    // view of the Greetings belonging to the selected Group.
-      List<GroupInfo> groupInfos = ObjectifyService.ofy()
+      List<Group> groups = ObjectifyService.ofy()
           .load()
-          .type(GroupInfo.class) // We want only GroupInfo
-          .ancestor(theGroup)    // Anyone in this book
-          .list();
-
-    if (groupInfos.isEmpty()) {
+          .type(Group.class)
+              .list();
+    if (groups.isEmpty() && user != null) {
 %>
-<p>Guestbook '${fn:escapeXml(groupName)}' has no messages.</p>
+<p>Please choose a group.</p>
 <%
-    } else {
+    } else if(user == null){
+    }
+    else{
 %>
 <p>Messages in Guestbook '${fn:escapeXml(groupName)}'.</p>
 <%
       // Look at all of our groupInfos
-        for (GroupInfo groupInfo : groupInfos) {
-            pageContext.setAttribute("greeting_content");
-            String author;
-            if (groupInfo.students_email == null) {
-                author = "An anonymous person";
-            } else {
-                author = groupInfo.students_email.get(0);
-                String author_id = groupInfo.students_email.get(0);
-                if (user != null && user.getUserId().equals(author_id)) {
-                    author += " (You)";
-                }
+        for (Group group : groups) {
+            String location = group.location;
+            String time = group.time.toString();
+            Long groupNumber = group.groupNumber;
             }
-            pageContext.setAttribute("greeting_user", author);
+           // pageContext.setAttribute("greeting_user", author);
 %>
 <p><b>${fn:escapeXml(greeting_user)}</b> wrote:</p>
 <blockquote>${fn:escapeXml(greeting_content)}</blockquote>
 <%
-        }
     }
 %>
 
-<form action="/sign" method="post">
-    <div><textarea name="content" rows="3" cols="60"></textarea></div>
-    <div><input type="submit" value="Post Greeting"/></div>
-    <input type="hidden" name="groupName" value="${fn:escapeXml(groupName)}"/>
-</form>
 <%-- //[END datastore]--%>
 <form action="/attendanceList.jsp" method="get">
     <div><input type="text" name="groupName" value="${fn:escapeXml(groupName)}"/></div>
